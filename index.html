@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>妙言云板</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2314b8a6'/%3E%3Cstop offset='1' stop-color='%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='4' width='56' height='56' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 46c-2.4-2-11-8.6-11-16a7 7 0 0 1 11-5 7 7 0 0 1 11 5c0 7.4-8.6 14-11 16z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script>
+// Supabase SDK 多 CDN 降级：jsDelivr 主线路不通时自动切备用域名
+(function () {
+  var CDNS = [
+    'https://fastly.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js',
+    'https://gcore.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js'
+  ];
+  var i = 0;
+  function tryNext() {
+    if (window.supabase || i >= CDNS.length) return;
+    var s = document.createElement('script');
+    s.src = CDNS[i++];
+    s.onload = function () { if (!window.supabase) tryNext(); };
+    s.onerror = tryNext;
+    document.head.appendChild(s);
+  }
+  window.addEventListener('load', function () { if (!window.supabase) tryNext(); });
+})();
+</script>
+<style>
+:root{
+  --teal:#0d9488; --teal-d:#115e59; --teal-l:#99f6e4;
+  --pink:#db2777; --pink-l:#fbcfe8;
+  --ink:#134e4a; --ink-2:#5b7b78; --line:rgba(13,148,136,.14);
+  --card:#ffffff; --bg1:#ccfbf1; --bg2:#f0fdfa; --bg3:#fdf4ff; --bg4:#fce7f3;
+  --grad:linear-gradient(135deg,#14b8a6,#ec4899);
+  --shadow:0 10px 30px rgba(13,148,136,.10), 0 2px 8px rgba(236,72,153,.06);
+  --r:16px;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 12% -8%, var(--bg1), transparent 60%),
+    radial-gradient(1000px 620px at 100% 0%, var(--bg4), transparent 55%),
+    linear-gradient(180deg, var(--bg2), var(--bg3));
+  background-attachment:fixed;
+  line-height:1.6;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+button{font:inherit; cursor:pointer; border:none; background:none; color:inherit;}
+input,textarea{font:inherit; color:inherit;}
+.hidden{display:none !important;}
+
+/* ===== 锁屏 ===== */
+.lock{
+  position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+  background:
+    radial-gradient(900px 480px at 20% 10%, #99f6e4, transparent 55%),
+    radial-gradient(800px 500px at 90% 90%, #fbcfe8, transparent 55%),
+    linear-gradient(160deg,#e6fffa,#fff7fb);
+  padding:24px;
+}
+.lock-card{
+  width:min(360px,100%); background:var(--card); border-radius:24px; padding:36px 28px 30px;
+  box-shadow:var(--shadow); text-align:center; animation:rise .5s ease both;
+}
+.lock-logo{width:56px;height:56px;border-radius:16px;background:var(--grad);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 20px rgba(236,72,153,.25);}
+.lock-card h1{font-size:22px;font-weight:700;}
+.lock-card .sub{color:var(--ink-2);font-size:13px;margin:4px 0 22px;}
+.lock-card input{
+  width:100%; height:46px; border:1.5px solid var(--line); border-radius:12px; padding:0 14px;
+  font-size:16px; outline:none; transition:border-color .2s, box-shadow .2s;
+}
+.lock-card input:focus{border-color:var(--teal); box-shadow:0 0 0 3px rgba(20,184,166,.15);}
+.lock-card .btn{width:100%; height:46px; margin-top:12px; border-radius:12px; background:var(--grad); color:#fff; font-weight:700; font-size:15px; transition:transform .15s, opacity .15s;}
+.lock-card .btn:active{transform:scale(.98);}
+.lock-err{color:#dc2626; font-size:13px; min-height:20px; margin-top:12px;}
+.shake{animation:shake .4s;}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes rise{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+
+/* ===== 应用外壳 ===== */
+.app{position:relative; z-index:1; max-width:760px; margin:0 auto; padding:20px 16px 48px;}
+.app-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:6px 4px 18px;}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand .logo{width:46px;height:46px;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px rgba(236,72,153,.22);}
+.brand h1{font-size:21px;font-weight:700;line-height:1.25;}
+.brand .sub{font-size:13px;color:var(--ink-2);}
+.days-badge{
+  display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+  background:#fff; border:1px solid var(--line); border-radius:999px; padding:8px 14px;
+  font-size:13px; font-weight:700; color:var(--pink); box-shadow:0 4px 14px rgba(236,72,153,.10);
+}
+.days-badge svg{flex:none;}
+
+.banner{
+  background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:12px;
+  padding:12px 16px; font-size:13.5px; margin:0 0 16px; line-height:1.7;
+}
+.banner code{background:rgba(154,52,18,.08); padding:1px 6px; border-radius:6px; font-size:12.5px;}
+
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow);}
+
+.composer{padding:14px 14px 12px; margin-bottom:14px;}
+.composer-top{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;}
+.author-switch{display:inline-flex; background:#f0fdfa; border:1px solid var(--line); border-radius:999px; padding:3px;}
+.author-switch button{
+  height:32px; padding:0 14px; border-radius:999px; font-size:13px; font-weight:700; color:var(--ink-2); transition:all .2s;
+}
+.author-switch button.on{background:var(--grad); color:#fff; box-shadow:0 3px 10px rgba(236,72,153,.25);}
+.reply-hint{
+  display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--teal-d);
+  background:rgba(20,184,166,.10); border-radius:999px; padding:4px 6px 4px 12px;
+}
+.reply-hint button{color:var(--teal); font-size:12.5px; font-weight:700; padding:2px 8px; border-radius:999px;}
+.reply-hint button:hover{background:rgba(20,184,166,.14);}
+.composer textarea{
+  width:100%; border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; resize:none;
+  font-size:16px; outline:none; transition:border-color .2s, box-shadow .2s; background:#fcfdfd; min-height:74px;
+}
+.composer textarea:focus{border-color:var(--teal); box-shadow:0 0 0 3px rgba(20,184,166,.12); background:#fff;}
+.composer-foot{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;}
+.composer-hint{font-size:13px; color:var(--ink-2);}
+.send-btn{
+  height:42px; padding:0 22px; border-radius:12px; background:var(--grad); color:#fff; font-weight:700; font-size:14.5px;
+  transition:transform .15s, opacity .15s; box-shadow:0 6px 16px rgba(236,72,153,.22);
+}
+.send-btn:active{transform:scale(.97);}
+.send-btn:disabled{opacity:.5; cursor:not-allowed;}
+
+.toolbar{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 4px 12px;}
+.tabs{display:inline-flex; background:#fff; border:1px solid var(--line); border-radius:12px; padding:3px; box-shadow:0 2px 8px rgba(13,148,136,.05);}
+.tab{height:34px; padding:0 15px; border-radius:9px; font-size:13px; font-weight:700; color:var(--ink-2); transition:all .2s;}
+.tab.on{background:rgba(20,184,166,.12); color:var(--teal-d);}
+.count{font-size:12.5px; color:var(--ink-2); white-space:nowrap;}
+
+/* ===== 留言列表 ===== */
+.list{display:flex; flex-direction:column; gap:12px;}
+.msg{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow);
+  padding:14px 14px 10px; display:flex; gap:12px; animation:rise .35s ease both;
+}
+.msg .avatar{
+  flex:none; width:40px; height:40px; border-radius:50%; color:#fff; font-size:16px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; user-select:none;
+}
+.av-0{background:linear-gradient(135deg,#0d9488,#2dd4bf);}
+.av-1{background:linear-gradient(135deg,#db2777,#f472b6);}
+.msg-body{flex:1; min-width:0;}
+.msg-head{display:flex; align-items:baseline; gap:8px; margin-bottom:3px;}
+.msg-head .author{font-size:13.5px; font-weight:700; color:var(--teal-d);}
+.msg-head .time{font-size:12px; color:var(--ink-2);}
+.msg .content{
+  font-size:15px; white-space:pre-wrap; word-break:break-word; cursor:default;
+  border-radius:8px; padding:2px 4px; margin:0 -4px; transition:background .15s;
+}
+.msg .content:hover{background:rgba(20,184,166,.05);}
+.msg .content.editing{background:#fff; border:1.5px solid var(--teal); padding:8px 10px;}
+.msg-actions{display:flex; gap:6px; margin-top:6px; opacity:.9;}
+.msg-actions button{
+  font-size:12.5px; font-weight:700; padding:3px 10px; border-radius:8px; color:var(--ink-2); transition:all .15s;
+}
+.msg-actions button:hover{background:rgba(20,184,166,.10); color:var(--teal-d);}
+.msg-actions .del:hover{background:rgba(220,38,38,.08); color:#dc2626;}
+.msg .editbox{margin-top:6px;}
+.msg .editbox textarea{
+  width:100%; border:1.5px solid var(--teal); border-radius:10px; padding:10px 12px; font-size:14.5px;
+  outline:none; resize:none; min-height:60px;
+}
+.msg .editbox .row{display:flex; gap:8px; margin-top:8px;}
+.msg .editbox button{
+  height:34px; padding:0 16px; border-radius:9px; font-size:13px; font-weight:700;
+}
+.msg .editbox .save{background:var(--grad); color:#fff;}
+.msg .editbox .cancel{background:#f0fdfa; color:var(--ink-2);}
+.replies{margin-top:10px; padding-left:0; display:flex; flex-direction:column; gap:10px; position:relative;}
+.replies::before{
+  content:""; position:absolute; left:20px; top:0; bottom:0; width:2px;
+  background:linear-gradient(180deg, rgba(20,184,166,.25), rgba(236,72,153,.20));
+  border-radius:2px;
+}
+.replies .msg{box-shadow:none; background:rgba(240,253,250,.55); border-radius:12px; padding:12px 12px 8px;}
+.replies .msg .avatar{width:32px;height:32px;font-size:13px;}
+
+.empty{
+  background:var(--card); border:1.5px dashed rgba(20,184,166,.30); border-radius:var(--r);
+  padding:44px 20px; text-align:center; color:var(--ink-2);
+}
+.empty .heart{display:block; margin:0 auto 14px; opacity:.5;}
+.empty b{display:block; font-size:15px; color:var(--ink); margin-bottom:4px;}
+
+.pager{display:flex; align-items:center; justify-content:center; gap:14px; margin:18px 0 6px;}
+.pager button{
+  height:38px; padding:0 18px; border-radius:11px; background:#fff; border:1px solid var(--line);
+  font-size:13.5px; font-weight:700; color:var(--teal-d); transition:all .15s; box-shadow:0 2px 6px rgba(13,148,136,.06);
+}
+.pager button:hover:not(:disabled){background:rgba(20,184,166,.08);}
+.pager button:disabled{opacity:.4; cursor:not-allowed;}
+.pager .info{font-size:13px; color:var(--ink-2);}
+
+.app-foot{text-align:center; color:var(--ink-2); font-size:12px; margin-top:26px;}
+
+.toasts{position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; align-items:center; width:min(420px,90vw);}
+.toast{
+  background:rgba(19,78,74,.92); color:#fff; border-radius:11px; padding:10px 18px; font-size:13.5px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18); animation:rise .3s ease both; max-width:100%;
+}
+.toast.err{background:rgba(190,18,60,.92);}
+
+@media (max-width:560px){
+  .app{padding:14px 12px 40px;}
+  .brand h1{font-size:18px;}
+  .days-badge{padding:7px 11px; font-size:13px;}
+  .msg{padding:12px 12px 9px; gap:10px;}
+  .msg .avatar{width:36px;height:36px;font-size:14px;}
+  .msg-actions button{padding:4px 8px;}
+  .send-btn{height:44px;}
+  .tab{padding:0 11px;}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important; transition:none !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 锁屏 ===== -->
+<div id="lock" class="lock">
+  <div class="lock-card">
+    <div class="lock-logo">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 20.5c-2-1.7-8.5-7-8.5-12.5a5 5 0 0 1 8.5-3.5 5 5 0 0 1 8.5 3.5c0 5.5-6.5 10.8-8.5 12.5z" fill="white"/></svg>
+    </div>
+    <h1>妙言云板</h1>
+    <p class="sub">给重要的人留句话</p>
+    <input id="lockPwd" type="password" placeholder="访问密码" autocomplete="off">
+    <button id="lockBtn" class="btn">进入</button>
+    <p id="lockErr" class="lock-err"></p>
+  </div>
+</div>
+
+<!-- ===== 应用 ===== -->
+<div id="app" class="app" hidden>
+  <header class="app-head">
+    <div class="brand">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 20.5c-2-1.7-8.5-7-8.5-12.5a5 5 0 0 1 8.5-3.5 5 5 0 0 1 8.5 3.5c0 5.5-6.5 10.8-8.5 12.5z" fill="white"/></svg>
+      </div>
+      <div>
+        <h1>妙言云板</h1>
+        <p class="sub">云端的悄悄话留言板</p>
+      </div>
+    </div>
+    <div class="days-badge" id="daysBadge" title="纪念日可以在文件顶部 LOVE_START_DATE 修改">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 20.5c-2-1.7-8.5-7-8.5-12.5a5 5 0 0 1 8.5-3.5 5 5 0 0 1 8.5 3.5c0 5.5-6.5 10.8-8.5 12.5z" fill="#ec4899"/></svg>
+      <span id="daysText">在一起 0 天</span>
+    </div>
+  </header>
+
+  <div id="configBanner" class="banner" hidden></div>
+
+  <section class="composer card">
+    <div class="composer-top">
+      <div class="author-switch" id="authorSwitch"></div>
+      <div id="replyHint" class="reply-hint" hidden></div>
+    </div>
+    <textarea id="composer" rows="2" placeholder="写下想说的话…"></textarea>
+    <div class="composer-foot">
+      <span class="composer-hint">双击留言可编辑 · 留言实时同步</span>
+      <button id="sendBtn" class="send-btn">发布</button>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-mode="all">全部</button>
+      <button class="tab" data-mode="today">今日</button>
+      <button class="tab" data-mode="week">最近 7 天</button>
+    </div>
+    <span class="count" id="count"></span>
+  </div>
+
+  <main id="list" class="list"></main>
+  <div class="pager" id="pager"></div>
+
+  <footer class="app-foot">妙言云板 · 基于 Supabase Realtime 实时同步</footer>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<script>
+// ============================================================
+// 妙言云板 · 部署前必改的配置
+// ============================================================
+// ① 到 supabase.com 创建项目后，把下面两个占位符换成你的真实值：
+//    Project URL 和 anon public key（Dashboard → Settings → API）
+const SUPABASE_URL = 'https://xhogyymkyoydmtcpgswo.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhob2d5eW1reW95ZG10Y3Bnc3dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMDg1ODIsImV4cCI6MjEwNzg4NDU4Mn0.g75zRuuBdUFjrMb8azzGuMYN5vuGyy2GSRG3fegAFt4 ';
+
+// ② 入口密码（默认 114514，改成你自己的）
+const ACCESS_PASSWORD = '260920';
+
+// ③ 留言身份（可改成你和小伙伴的名字）
+const AUTHORS = ['月', '沆'];
+
+// ④ 在一起纪念日（用于顶部“在一起 N 天”彩蛋，改成你们的日期）
+const LOVE_START_DATE = '2026-09-20';
+
+// ⑤ 每页留言条数
+const PAGE_SIZE = 10;
+
+// ============================================================
+// 初始化
+// ============================================================
+const CONFIGURED = !SUPABASE_URL.includes('YOUR-') && !SUPABASE_ANON_KEY.includes('YOUR-');
+const SDK_OK = typeof window.supabase !== 'undefined';
+const sb = SDK_OK && CONFIGURED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+let messages = [];          // 全部留言（含回复）
+let currentAuthor = AUTHORS[0] || '我';
+let replyTarget = null;     // {id, author}
+let filterMode = 'all';     // all | today | week
+let page = 1;
+let unlocked = false;
+
+const $ = (id) => document.getElementById(id);
+const lockEl = $('lock'), appEl = $('app'), lockPwd = $('lockPwd'),
+      lockErr = $('lockErr'), daysText = $('daysText'), daysBadge = $('daysBadge'),
+      authorSwitch = $('authorSwitch'), composer = $('composer'), sendBtn = $('sendBtn'),
+      replyHint = $('replyHint'), listEl = $('list'), pagerEl = $('pager'),
+      countEl = $('count'), configBanner = $('configBanner');
+
+// ============================================================
+// 工具函数
+// ============================================================
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function pad(n){ return n < 10 ? '0' + n : '' + n; }
+function fullTime(ts){
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function timeAgo(ts){
+  const d = new Date(ts), now = new Date(), s = Math.floor((now - d) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s/60) + ' 分钟前';
+  if (s < 86400) return Math.floor(s/3600) + ' 小时前';
+  if (s < 172800) return '昨天';
+  if (s < 604800) return Math.floor(s/86400) + ' 天前';
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function toast(msg, type){
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'err' ? ' err' : '');
+  el.textContent = msg;
+  $('toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2600);
+}
+function loveDays(){
+  const start = new Date(LOVE_START_DATE);
+  if (isNaN(start)) return null;
+  const now = new Date();
+  const days = Math.floor((now - start) / 86400000) + 1;
+  return days > 0 ? days : null;
+}
+
+// ============================================================
+// 锁屏
+// ============================================================
+function unlock(){
+  if (unlocked) return;
+  unlocked = true;
+  lockEl.classList.add('hidden');
+  appEl.removeAttribute('hidden');
+  if (loveDays() != null) daysText.textContent = '在一起 ' + loveDays() + ' 天';
+  else daysBadge.classList.add('hidden');
+
+  if (!SDK_OK) {
+    configBanner.hidden = false;
+    configBanner.innerHTML = 'Supabase SDK 加载失败：网络可能拦截了 CDN，页面已自动尝试备用镜像。<br>仍失败时请检查网络，或把页面里 <code>cdn.jsdelivr.net</code> 换成 <code>fastly.jsdelivr.net</code> 再试。';
+    sendBtn.disabled = true;
+    return;
+  }
+  if (!CONFIGURED) {
+    configBanner.hidden = false;
+    configBanner.innerHTML = '还没连上后端：请把文件顶部 <code>SUPABASE_URL</code> 和 <code>SUPABASE_ANON_KEY</code> 两个占位符替换成你的 Supabase 项目参数（创建项目后到 <code>Settings → API</code> 复制），然后刷新页面。';
+    sendBtn.disabled = true;
+    return;
+  }
+  fetchAll();
+  setupRealtime();
+  composer.focus();
+}
+lockBtn.addEventListener('click', tryUnlock);
+lockPwd.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+function tryUnlock(){
+  if (lockPwd.value.trim() === ACCESS_PASSWORD) { lockErr.textContent = ''; unlock(); }
+  else {
+    lockErr.textContent = '密码不对，再试试';
+    lockCardShake();
+  }
+}
+function lockCardShake(){
+  const card = document.querySelector('.lock-card');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+}
+
+// ============================================================
+// 数据：读取 / 实时订阅
+// ============================================================
+async function fetchAll(){
+  const { data, error } = await sb.from('messages').select('*').order('created_at', { ascending: true });
+  if (error) { toast('读取留言失败：' + error.message, 'err'); return; }
+  messages = data || [];
+  page = 1;
+  render();
+}
+function setupRealtime(){
+  sb.channel('public:messages')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, p => {
+      if (p.new) { messages.push(p.new); render(); }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, p => {
+      if (!p.new) return;
+      const i = messages.findIndex(m => m.id === p.new.id);
+      if (i > -1) messages[i] = p.new; else messages.push(p.new);
+      render();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, p => {
+      const id = p.old && p.old.id;
+      if (!id) return;
+      messages = messages.filter(m => m.id !== id && m.parent_id !== id);
+      render();
+    })
+    .subscribe((status, err) => {
+      if (err) toast('实时连接失败：' + err.message, 'err');
+    });
+}
+
+// ============================================================
+// 写入：发布 / 回复 / 编辑 / 删除
+// ============================================================
+async function addMessage(text){
+  sendBtn.disabled = true;
+  const row = { author: currentAuthor, content: text };
+  if (replyTarget) row.parent_id = replyTarget.id;
+  const { data, error } = await sb.from('messages').insert(row).select().single();
+  sendBtn.disabled = false;
+  if (error) { toast('发布失败：' + error.message, 'err'); return false; }
+  messages.push(data);
+  replyTarget = null; updateReplyHint();
+  composer.value = ''; composer.focus();
+  page = 1;
+  render();
+  return true;
+}
+async function updateMessage(id, text){
+  const { error } = await sb.from('messages').update({ content: text }).eq('id', id);
+  if (error) { toast('保存失败：' + error.message, 'err'); return false; }
+  return true;
+}
+async function deleteMessage(id){
+  if (!window.confirm('确定删除这条留言吗？它的回复也会一起删除。')) return;
+  const { error } = await sb.from('messages').delete().eq('id', id);
+  if (error) { toast('删除失败：' + error.message, 'err'); return; }
+  // 实时通道会同步删除所有端；这里本地立即移除，避免等待
+  messages = messages.filter(m => m.id !== id && m.parent_id !== id);
+  render();
+}
+
+// ============================================================
+// 渲染：树形结构 → 筛选 → 分页
+// ============================================================
+function buildTree(list){
+  const map = {}; const roots = [];
+  list.forEach(m => { m._replies = []; map[m.id] = m; });
+  list.forEach(m => {
+    if (m.parent_id && map[m.parent_id]) map[m.parent_id]._replies.push(m);
+    else roots.push(m);
+  });
+  roots.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  roots.forEach(r => r._replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+  return roots;
+}
+function inRange(ts, mode){
+  if (mode === 'all') return true;
+  const now = new Date(), t = new Date(ts);
+  if (mode === 'today') return t.toDateString() === now.toDateString();
+  if (mode === 'week') return now - t <= 7 * 86400000;
+  return true;
+}
+function cardHTML(m){
+  const replies = (m._replies || []).map(cardHTML).join('');
+  const avClass = 'av-' + (AUTHORS.indexOf(m.author) % 2 === 1 ? 1 : 0);
+  return (
+    '<div class="msg" data-id="' + m.id + '">' +
+      '<div class="avatar ' + avClass + '">' + esc(Array.from(m.author || '?')[0]) + '</div>' +
+      '<div class="msg-body">' +
+        '<div class="msg-head"><span class="author">' + esc(m.author) + '</span><span class="time" title="' + fullTime(m.created_at) + '">' + timeAgo(m.created_at) + '</span></div>' +
+        '<div class="content" data-id="' + m.id + '" title="双击编辑">' + esc(m.content) + '</div>' +
+        '<div class="msg-actions">' +
+          '<button class="reply" data-id="' + m.id + '" data-author="' + esc(m.author) + '">回复</button>' +
+          '<button class="del" data-id="' + m.id + '">删除</button>' +
+        '</div>' +
+        (m._replies && m._replies.length ? '<div class="replies">' + replies + '</div>' : '') +
+      '</div>' +
+    '</div>'
+  );
+}
+function render(){
+  const filtered = messages.filter(m => inRange(m.created_at, filterMode));
+  const tree = buildTree(filtered);
+  const pages = Math.max(1, Math.ceil(tree.length / PAGE_SIZE));
+  if (page > pages) page = pages;
+  const slice = tree.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  if (!slice.length) {
+    listEl.innerHTML = '<div class="empty"><svg class="heart" width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 20.5c-2-1.7-8.5-7-8.5-12.5a5 5 0 0 1 8.5-3.5 5 5 0 0 1 8.5 3.5c0 5.5-6.5 10.8-8.5 12.5z" fill="#f9a8d4"/></svg><b>' + (filterMode === 'all' ? '还没有留言' : '这个时间段还没有留言') + '</b>来写下第一条吧</div>';
+  } else {
+    listEl.innerHTML = slice.map(cardHTML).join('');
+  }
+  countEl.textContent = filtered.length + ' 条留言';
+  pagerEl.innerHTML =
+    '<button id="prevPage"' + (page <= 1 ? ' disabled' : '') + '>上一页</button>' +
+    '<span class="info">第 ' + page + ' / ' + pages + ' 页</span>' +
+    '<button id="nextPage"' + (page >= pages ? ' disabled' : '') + '>下一页</button>';
+  $('prevPage').addEventListener('click', () => { if (page > 1) { page--; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
+  $('nextPage').addEventListener('click', () => { if (page < pages) { page++; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); } });
+}
+
+// ============================================================
+// 交互：作者切换 / 回复 / 编辑 / 删除
+// ============================================================
+AUTHORS.forEach((a, i) => {
+  const b = document.createElement('button');
+  b.textContent = a;
+  if (i === 0) b.classList.add('on');
+  b.addEventListener('click', () => {
+    currentAuthor = a;
+    authorSwitch.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+  });
+  authorSwitch.appendChild(b);
+});
+
+function updateReplyHint(){
+  if (replyTarget) {
+    replyHint.hidden = false;
+    replyHint.innerHTML = '正在回复 @' + esc(replyTarget.author) + '<button id="cancelReply">取消</button>';
+    $('cancelReply').addEventListener('click', () => { replyTarget = null; updateReplyHint(); composer.focus(); });
+  } else {
+    replyHint.hidden = true;
+    replyHint.innerHTML = '';
+  }
+}
+
+listEl.addEventListener('click', e => {
+  const replyBtn = e.target.closest('.reply');
+  if (replyBtn) {
+    replyTarget = { id: replyBtn.dataset.id, author: replyBtn.dataset.author };
+    updateReplyHint();
+    composer.focus();
+    return;
+  }
+  const delBtn = e.target.closest('.del');
+  if (delBtn) deleteMessage(delBtn.dataset.id);
+});
+
+listEl.addEventListener('dblclick', e => {
+  const content = e.target.closest('.content');
+  if (!content || content.classList.contains('editing')) return;
+  const id = content.dataset.id;
+  const msg = messages.find(m => m.id === id);
+  if (!msg) return;
+  content.classList.add('editing');
+  content.innerHTML =
+    '<div class="editbox">' +
+      '<textarea rows="2">' + esc(msg.content) + '</textarea>' +
+      '<div class="row">' +
+        '<button class="save">保存</button><button class="cancel">取消</button>' +
+      '</div>' +
+    '</div>';
+  const ta = content.querySelector('textarea');
+  ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+  content.querySelector('.save').addEventListener('click', async () => {
+    const text = ta.value.trim();
+    if (!text) { toast('内容不能为空', 'err'); return; }
+    if (await updateMessage(id, text)) toast('已保存');
+  });
+  content.querySelector('.cancel').addEventListener('click', () => render());
+  ta.addEventListener('keydown', e2 => {
+    if (e2.key === 'Enter' && (e2.ctrlKey || e2.metaKey)) content.querySelector('.save').click();
+    if (e2.key === 'Escape') render();
+  });
+});
+
+// 筛选
+$('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  filterMode = tab.dataset.mode;
+  page = 1;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  tab.classList.add('on');
+  render();
+});
+
+// 发布
+sendBtn.addEventListener('click', async () => {
+  const text = composer.value.trim();
+  if (!text) { toast('写点内容再发布吧'); return; }
+  if (!sb) { toast('还没配置 Supabase，请先替换文件顶部的参数', 'err'); return; }
+  await addMessage(text);
+});
+composer.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendBtn.click();
+});
+
+// ============================================================
+// 启动
+// ============================================================
+// 预览/调试：URL 加 ?skip=1 可跳过密码（正式使用请输密码）
+const params = new URLSearchParams(location.search);
+if (params.get('skip') === '1') unlock(); else lockPwd.focus();
+</script>
+</body>
+</html>
